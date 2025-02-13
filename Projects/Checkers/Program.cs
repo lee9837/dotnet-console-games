@@ -5,10 +5,10 @@ Encoding encoding = Console.OutputEncoding;
 try
 {
 	Console.OutputEncoding = Encoding.UTF8;
-	Game game = ShowIntroScreenAndGetOption();
+	Game game = ShowIntroScreenAndGetOption();//Call the function to display the game introduction and get the game mode selected by the player
 	Console.Clear();
-	RunGameLoop(game);
-	RenderGameState(game, promptPressKey: true);
+	RunGameLoop(game);//Run the main game loop
+	RenderGameState(game, promptPressKey: true);// Render the final game state
 	Console.ReadKey(true);
 }
 catch (Exception e)
@@ -27,7 +27,7 @@ finally
 Game ShowIntroScreenAndGetOption()
 {
 	Console.Clear();
-	Console.WriteLine();
+	Console.WriteLine();// Display the game title and game rules introduction
 	Console.WriteLine("  Checkers");
 	Console.WriteLine();
 	Console.WriteLine("  Checkers is played on an 8x8 board between two sides commonly known as black");
@@ -52,83 +52,83 @@ Game ShowIntroScreenAndGetOption()
 	Console.WriteLine("    [1] Black (human) vs White (computer)");
 	Console.Write("    [2] Black (human) vs White (human)");
 
-	int? humanPlayerCount = null;
-	while (humanPlayerCount is null)
+	int? humanPlayerCount = null;// Initialize the number of players to null
+	while (humanPlayerCount is null)// Loop until the player selects a valid mode
 	{
-		Console.CursorVisible = false;
-		switch (Console.ReadKey(true).Key)
+		Console.CursorVisible = false;// Hide the cursor
+		switch (Console.ReadKey(true).Key)//Select mode
 		{
 			case ConsoleKey.D0 or ConsoleKey.NumPad0: humanPlayerCount = 0; break;
 			case ConsoleKey.D1 or ConsoleKey.NumPad1: humanPlayerCount = 1; break;
 			case ConsoleKey.D2 or ConsoleKey.NumPad2: humanPlayerCount = 2; break;
 		}
 	}
-	return new Game(humanPlayerCount.Value);
+	return new Game(humanPlayerCount.Value);// Create and return a new game object based on the player's selection
 }
-
+// Game main loop
 void RunGameLoop(Game game)
 {
-	while (game.Winner is null)
+	while (game.Winner is null)// Loop until there is a winner for the game
 	{
-		Player currentPlayer = game.Players.First(player => player.Color == game.Turn);
-		if (currentPlayer.IsHuman)
+		Player currentPlayer = game.Players.First(player => player.Color == game.Turn);// Get the player of the current round
+		if (currentPlayer.IsHuman)// If the current player is a human
 		{
-			while (game.Turn == currentPlayer.Color)
+			while (game.Turn == currentPlayer.Color)// Loop until the current player has finished moving
 			{
-				(int X, int Y)? selectionStart = null;
+				(int X, int Y)? selectionStart = null;// Initialize the moving starting position
 				(int X, int Y)? from = game.Board.Aggressor is not null ? (game.Board.Aggressor.X, game.Board.Aggressor.Y) : null;
-				List<Move> moves = game.Board.GetPossibleMoves(game.Turn);
-				if (moves.Select(move => move.PieceToMove).Distinct().Count() is 1)
+				List<Move> moves = game.Board.GetPossibleMoves(game.Turn);// Get all possible moves for the current player
+				if (moves.Select(move => move.PieceToMove).Distinct().Count() is 1)// If only one piece can be moved
 				{
-					Move must = moves.First();
-					from = (must.PieceToMove.X, must.PieceToMove.Y);
-					selectionStart = must.To;
+					Move must = moves.First();// Get the required movement
+					from = (must.PieceToMove.X, must.PieceToMove.Y);// Set the starting position
+					selectionStart = must.To;// Set the selection starting position
 				}
-				while (from is null)
+				while (from is null)// Loop until the player selects a valid starting position
 				{
-					from = HumanMoveSelection(game);
-					selectionStart = from;
+					from = HumanMoveSelection(game);// Let the player choose a starting position
+					selectionStart = from;// Set the selection starting position
 				}
 				(int X, int Y)? to = HumanMoveSelection(game, selectionStart: selectionStart, from: from);
-				Piece? piece = null;
-				piece = game.Board[from.Value.X, from.Value.Y];
-				if (piece is null || piece.Color != game.Turn)
+				Piece? piece = null;// Let the player choose the target location
+				piece = game.Board[from.Value.X, from.Value.Y];// Get the starting position of the chess piece
+				if (piece is null || piece.Color != game.Turn)// If the starting position is invalid or the piece does not belong to the current player
 				{
 					from = null;
 					to = null;
 				}
-				if (from is not null && to is not null)
+				if (from is not null && to is not null)// If both the starting position and the target position are valid
 				{
-					Move? move = game.Board.ValidateMove(game.Turn, from.Value, to.Value);
+					Move? move = game.Board.ValidateMove(game.Turn, from.Value, to.Value);// Verify that the move is possible
 					if (move is not null &&
-						(game.Board.Aggressor is null || move.PieceToMove == game.Board.Aggressor))
+						(game.Board.Aggressor is null || move.PieceToMove == game.Board.Aggressor))// If the move is valid and follows the rules
 					{
-						game.PerformMove(move);
+						game.PerformMove(move); // Executes the move
 					}
 				}
 			}
 		}
-		else
+		else// If the current player is the computer
 		{
-			List<Move> moves = game.Board.GetPossibleMoves(game.Turn);
-			List<Move> captures = moves.Where(move => move.PieceToCapture is not null).ToList();
-			if (captures.Count > 0)
+			List<Move> moves = game.Board.GetPossibleMoves(game.Turn);// Gets all possible moves for the current player
+			List<Move> captures = moves.Where(move => move.PieceToCapture is not null).ToList();// Filters moves that capture an opponent's piece
+			if (captures.Count > 0)// If there are capturing moves
 			{
-				game.PerformMove(captures[Random.Shared.Next(captures.Count)]);
+				game.PerformMove(captures[Random.Shared.Next(captures.Count)]);// Randomly selects a capturing move
 			}
-			else if(!game.Board.Pieces.Any(piece => piece.Color == game.Turn && !piece.Promoted))
+			else if(!game.Board.Pieces.Any(piece => piece.Color == game.Turn && !piece.Promoted))//If no capturing moves, check if all pieces are kings
 			{
-				var (a, b) = game.Board.GetClosestRivalPieces(game.Turn);
-				Move? priorityMove = moves.FirstOrDefault(move => move.PieceToMove == a && Board.IsTowards(move, b));
-				game.PerformMove(priorityMove ?? moves[Random.Shared.Next(moves.Count)]);
+				var (a, b) = game.Board.GetClosestRivalPieces(game.Turn);// Get the closest pair of rival pieces
+				Move? priorityMove = moves.FirstOrDefault(move => move.PieceToMove == a && Board.IsTowards(move, b));// Find a move that moves towards the closest rival piece
+				game.PerformMove(priorityMove ?? moves[Random.Shared.Next(moves.Count)]);// Perform the priority move if found, otherwise perform a random move
 			}
 			else
 			{
-				game.PerformMove(moves[Random.Shared.Next(moves.Count)]);
+				game.PerformMove(moves[Random.Shared.Next(moves.Count)]);// Randomly select a move from all possible moves
 			}
 		}
 
-		RenderGameState(game, playerMoved: currentPlayer, promptPressKey: true);
+		RenderGameState(game, playerMoved: currentPlayer, promptPressKey: true);// Renders the game state
 		Console.ReadKey(true);
 	}
 }
@@ -144,7 +144,7 @@ void RenderGameState(Game game, Player? playerMoved = null, (int X, int Y)? sele
 	Console.CursorVisible = false;
 	Console.SetCursorPosition(0, 0);
 	StringBuilder sb = new();
-	sb.AppendLine();
+	sb.AppendLine();// Draws the game board
 	sb.AppendLine("  Checkers");
 	sb.AppendLine();
 	sb.AppendLine($"    ╔═══════════════════╗");
@@ -175,6 +175,7 @@ void RenderGameState(Game game, Player? playerMoved = null, (int X, int Y)? sele
 	PieceColor? tc = game.Turn;
 	// Note: these strings need to match in length
 	// so they overwrite each other.
+	// Displays game state information
 	string w = $"  *** {wc} wins ***";
 	string m = $"  {mc} moved       ";
 	string t = $"  {tc}'s turn      ";
@@ -187,10 +188,10 @@ void RenderGameState(Game game, Player? playerMoved = null, (int X, int Y)? sele
 	sb.AppendLine(promptPressKey ? p : s);
 	Console.Write(sb);
 
-	char B(int x, int y) =>
-		(x, y) == selection ? '$' :
-		(x, y) == from ? '@' :
-		ToChar(game.Board[x, y]);
+	char B(int x, int y) => // Gets the symbol for a specific position
+        (x, y) == selection ? '$' : // If the position is selected, displays '$'
+        (x, y) == from ? '@' : // If the position is the starting point, displays '@'
+        ToChar(game.Board[x, y]); // Otherwise, displays the piece symbol
 
 	static char ToChar(Piece? piece) =>
 		piece is null ? Vacant :
@@ -206,18 +207,18 @@ void RenderGameState(Game game, Player? playerMoved = null, (int X, int Y)? sele
 
 (int X, int Y)? HumanMoveSelection(Game game, (int X, int y)? selectionStart = null, (int X, int Y)? from = null)
 {
-	(int X, int Y) selection = selectionStart ?? (3, 3);
-	while (true)
-	{
-		RenderGameState(game, selection: selection, from: from);
-		switch (Console.ReadKey(true).Key)
-		{
-			case ConsoleKey.DownArrow:  selection.Y = Math.Max(0, selection.Y - 1); break;
-			case ConsoleKey.UpArrow:    selection.Y = Math.Min(7, selection.Y + 1); break;
-			case ConsoleKey.LeftArrow:  selection.X = Math.Max(0, selection.X - 1); break;
-			case ConsoleKey.RightArrow: selection.X = Math.Min(7, selection.X + 1); break;
-			case ConsoleKey.Enter:      return selection;
-			case ConsoleKey.Escape:     return null;
-		}
-	}
+    (int X, int Y) selection = selectionStart ?? (3, 3); // Initializes the selection position, defaulting to (3, 3)
+    while (true) // Loops until the player selects a valid position
+    {
+        RenderGameState(game, selection: selection, from: from); // Renders the game state
+        switch (Console.ReadKey(true).Key) // Listens for player input
+        {
+            case ConsoleKey.DownArrow: selection.Y = Math.Max(0, selection.Y - 1); break; // Moves down
+            case ConsoleKey.UpArrow: selection.Y = Math.Min(7, selection.Y + 1); break; // Moves up
+            case ConsoleKey.LeftArrow: selection.X = Math.Max(0, selection.X - 1); break; // Moves left
+            case ConsoleKey.RightArrow: selection.X = Math.Min(7, selection.X + 1); break; // Moves right
+            case ConsoleKey.Enter: return selection; // Confirms the selection
+            case ConsoleKey.Escape: return null; // Cancels the selection
+        }
+    }
 }

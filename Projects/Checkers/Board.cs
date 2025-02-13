@@ -2,13 +2,13 @@
 
 public class Board
 {
-	public List<Piece> Pieces { get; }
+	public List<Piece> Pieces { get; }// 2D array representing the game board. Each cell can contain a Piece or be null (empty).
 
-	public Piece? Aggressor { get; set; }
-
+	public Piece? Aggressor { get; set; }// Property to track the aggressor (a piece that must continue capturing).
+										 // Indexer to access pieces on the board using coordinates (x, y).
 	public Piece? this[int x, int y] =>
 		Pieces.FirstOrDefault(piece => piece.X == x && piece.Y == y);
-
+	// Initialize the board and place the pieces according to the initial layout of international checkers
 	public Board()
 	{
 		Aggressor = null;
@@ -41,13 +41,13 @@ public class Board
 				new() { NotationPosition ="H6", Color = White}
 			};
 	}
-
+	// Convert chessboard coordinates (x, y) to chessboard position marks 
 	public static string ToPositionNotationString(int x, int y)
 	{
 		if (!IsValidPosition(x, y)) throw new ArgumentException("Not a valid position!");
 		return $"{(char)('A' + x)}{y + 1}";
 	}
-
+	// Parse the board position markers (such as A3, B5) and convert them to (x, y) coordinates
 	public static (int X, int Y) ParsePositionNotation(string notation)
 	{
 		if (notation is null) throw new ArgumentNullException(nameof(notation));
@@ -58,22 +58,23 @@ public class Board
 			throw new FormatException($@"{nameof(notation)} ""{notation}"" is not valid");
 		return (notation[0] - 'A', notation[1] - '1');
 	}
-
+// Determine whether the coordinates are within the chessboard range
 	public static bool IsValidPosition(int x, int y) =>
 		0 <= x && x < 8 &&
 		0 <= y && y < 8;
-
+// Get the closest pair of opponent chess pieces on the board
 	public (Piece A, Piece B) GetClosestRivalPieces(PieceColor priorityColor)
 	{
 		double minDistanceSquared = double.MaxValue;
 		(Piece A, Piece B) closestRivals = (null!, null!);
+		// Iterate through all pieces of the given color
 		foreach (Piece a in Pieces.Where(piece => piece.Color == priorityColor))
-		{
+		{// Compare against all pieces of the opposing color
 			foreach (Piece b in Pieces.Where(piece => piece.Color != priorityColor))
-			{
+			{// Compute the squared distance between the two pieces
 				(int X, int Y) vector = (a.X - b.X, a.Y - b.Y);
 				double distanceSquared = vector.X * vector.X + vector.Y * vector.Y;
-				if (distanceSquared < minDistanceSquared)
+				if (distanceSquared < minDistanceSquared)// Update the closest pair if a shorter distance is found
 				{
 					minDistanceSquared = distanceSquared;
 					closestRivals = (a, b);
@@ -83,10 +84,10 @@ public class Board
 		return closestRivals;
 	}
 
-	public List<Move> GetPossibleMoves(PieceColor color)
+	public List<Move> GetPossibleMoves(PieceColor color)// Retrieves all possible moves for a given piece color.
 	{
 		List<Move> moves = new();
-		if (Aggressor is not null)
+		if (Aggressor is not null)// If there is an aggressor (a piece that must continue capturing), only return its valid capture moves
 		{
 			if (Aggressor.Color != color)
 			{
@@ -94,42 +95,46 @@ public class Board
 			}
 			moves.AddRange(GetPossibleMoves(Aggressor).Where(move => move.PieceToCapture is not null));
 		}
-		else
+		else// Otherwise, compute all valid moves for the specified color
 		{
 			foreach (Piece piece in Pieces.Where(piece => piece.Color == color))
 			{
 				moves.AddRange(GetPossibleMoves(piece));
 			}
 		}
+		// If capture moves exist, only return those
 		return moves.Any(move => move.PieceToCapture is not null)
 			? moves.Where(move => move.PieceToCapture is not null).ToList()
 			: moves;
 	}
-
+	// Retrieves all possible moves for a specific piece.
 	public List<Move> GetPossibleMoves(Piece piece)
-	{
+	{// Check all four diagonal directions for valid moves.
 		List<Move> moves = new();
 		ValidateDiagonalMove(-1, -1);
-		ValidateDiagonalMove(-1,  1);
-		ValidateDiagonalMove( 1, -1);
-		ValidateDiagonalMove( 1,  1);
+		ValidateDiagonalMove(-1, 1);
+		ValidateDiagonalMove(1, -1);
+		ValidateDiagonalMove(1, 1);
 		return moves.Any(move => move.PieceToCapture is not null)
 			? moves.Where(move => move.PieceToCapture is not null).ToList()
 			: moves;
 
-		void ValidateDiagonalMove(int dx, int dy)
-		{
+		void ValidateDiagonalMove(int dx, int dy)// Determines if a diagonal move is valid.
+		{   // Non-promoted black pieces cannot move backward.
 			if (!piece.Promoted && piece.Color is Black && dy is -1) return;
+			// Non-promoted white pieces cannot move backward.
 			if (!piece.Promoted && piece.Color is White && dy is 1) return;
 			(int X, int Y) target = (piece.X + dx, piece.Y + dy);
 			if (!IsValidPosition(target.X, target.Y)) return;
 			PieceColor? targetColor = this[target.X, target.Y]?.Color;
+			// If the target square is empty, the move is valid.
 			if (targetColor is null)
 			{
 				if (!IsValidPosition(target.X, target.Y)) return;
 				Move newMove = new(piece, target);
 				moves.Add(newMove);
 			}
+			// If the target square is occupied by an opponent's piece, check for a jump move.
 			else if (targetColor != piece.Color)
 			{
 				(int X, int Y) jump = (piece.X + 2 * dx, piece.Y + 2 * dy);
