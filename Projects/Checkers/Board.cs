@@ -141,24 +141,55 @@ public class Board
 private List<Move> GetSoldierMoves(Piece piece)
 {
     List<Move> moves = new();
-    int direction = piece.Color == Black ? 1 : -1; // Soldiers can only move forward
-    (int X, int Y) target = (piece.X, piece.Y + direction);
 
-    if (IsValidPosition(target.X, target.Y))
+    // The direction in which the soldier can move forward
+    int forwardDirection = piece.Color == Black ? 1 : -1;
+
+    // If StepsMoved < 2, the soldier can only move forward
+    if (piece.StepsMoved < 2)
     {
-        Piece? targetPiece = this[target.X, target.Y];
-        if (targetPiece == null)
-        {
-				moves.Add(new Move(piece, target));
-			}
-			else if (targetPiece.Color != piece.Color)
-			{
-				moves.Add(new Move(piece, target, targetPiece));
-			}
-		}
+        (int X, int Y) target = (piece.X, piece.Y + forwardDirection);
 
-		return moves;
-	}
+        if (IsValidPosition(target.X, target.Y))
+        {
+            Piece? targetPiece = this[target.X, target.Y];
+            if (targetPiece == null)
+            {
+                moves.Add(new Move(piece, target));
+            }
+            else if (targetPiece.Color != piece.Color)
+            {
+                moves.Add(new Move(piece, target, targetPiece));
+            }
+        }
+    }
+    else
+    {
+        // If StepsMoved >= 2, the soldier can move forward, backward, left, and right
+        int[] dx = { -1, 1, 0, 0 }; // Left, Right, Up, no Down
+        int[] dy = { 0, 0, forwardDirection, 0};
+
+        for (int i = 0; i < 4; i++)
+        {
+            (int X, int Y) target = (piece.X + dx[i], piece.Y + dy[i]);
+
+            if (IsValidPosition(target.X, target.Y))
+            {
+                Piece? targetPiece = this[target.X, target.Y];
+                if (targetPiece == null)
+                {
+                    moves.Add(new Move(piece, target));
+                }
+                else if (targetPiece.Color != piece.Color)
+                {
+                    moves.Add(new Move(piece, target, targetPiece));
+                }
+            }
+        }
+    }
+
+    return moves;
+}
 
 	private List<Move> GetCannonMoves(Piece piece)
 	{

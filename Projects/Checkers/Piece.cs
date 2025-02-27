@@ -14,6 +14,7 @@ public class Piece
     public PieceColor Color { get; init; }
 
     public PieceType Type { get; set; } // Add a new attribute to indicate the chess piece type
+    public int StepsMoved { get; set; } = 0; // Record the number of steps the soldier has moved
     public bool Promoted { get; set; }
 }
 

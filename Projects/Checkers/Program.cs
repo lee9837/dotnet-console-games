@@ -1,4 +1,16 @@
-﻿Exception? exception = null;
+﻿/*
+Requirement A: Special Pieces and Phase Cycle
+The game introduces special pieces, each with distinct movement and capture rules. The Soldier can only move forward initially but gains the ability to move forward, left, and right after moving two steps.
+Additionally, the game features a phase cycle based on the number of turns (TurnCount). During the first five turns, the King is protected and cannot be captured.
+This phase cycle dynamically changes the behavior of certain pieces, adding a layer of strategy to the game.
+
+Requirement B: Unique Movement Styles
+Every piece in the game has a unique movement style, defined by its type. The Soldier, King, Cannon, Dragon, and Horse each have their own movement logic, ensuring that each piece behaves differently.
+
+Implementation
+To implement these features, the game uses a combination of properties and methods in the Game, Board, and Piece classes. The PieceType enum defines the type of each piece, and separate methods in the Board class handle the movement logic for each piece type (e.g., GetSoldierMoves, GetKingMoves). The TurnCount property in the Game class tracks the number of turns, and logic in the PerformMove method updates the TurnCount and adjusts piece behavior based on the phase cycle. The StepsMoved property in the Piece class tracks the Soldier’s movement, enabling its movement rules to change after two steps.
+*/
+Exception? exception = null;
 
 Encoding encoding = Console.OutputEncoding;
 
@@ -136,39 +148,55 @@ void RunGameLoop(Game game)
 
 void RenderGameState(Game game, Player? playerMoved = null, (int X, int Y)? selection = null, (int X, int Y)? from = null, bool promptPressKey = false)
 {
-    const char BlackPiece = '○';
-
-    const char WhitePiece = '◙';
-const char WhiteSoldier = '♙';
-const char WhiteCannon = '♖';
-const char WhiteHorse = '♘';
-const char WhiteDragon = '♕';
-const char WhiteKing = '♔';
+Console.Clear();
+    const char WhiteSoldier = '♙';
+    const char WhiteCannon = '♖';
+    const char WhiteHorse = '♘';
+    const char WhiteDragon = '♕';
+    const char WhiteKing = '♔';
+    const char BlackSoldier = '♟';
+    const char BlackCannon = '♜';
+    const char BlackHorse = '♞';
+    const char BlackDragon = '♛';
+    const char BlackKing = '♚';
     const char Vacant = '·';
-
+    var blackPieces = game.GetRemainingPieces(Black);
+    var whitePieces = game.GetRemainingPieces(White);
     Console.CursorVisible = false;
     Console.SetCursorPosition(0, 0);
     StringBuilder sb = new();
     sb.AppendLine(); // Draws the game board
     sb.AppendLine("  Checkers");
 	sb.AppendLine();
-	sb.AppendLine("    Soldier : Moves forward one step and captures forward.");
+	sb.AppendLine("    Soldier : Moves forward one step and captures forward.(After moving two steps, the soldier can move forward, backward, left, or right.)");
 	sb.AppendLine("    Horse   : Moves diagonally one step and can capture.");
 	sb.AppendLine("    Dragon  : Moves horizontally or vertically any steps and captures the first piece on its path.");
 	sb.AppendLine("    Cannon  : Moves horizontally or vertically and captures by jumping over one piece.");
-	sb.AppendLine("    King    : Moves one step in any direction and captures the first piece on its path.");
+	sb.AppendLine("    King    : Moves one step in any direction and captures the first piece on its path.(The king cannot be captured in the first five turns.)");
 	sb.AppendLine($"    ╔═══════════════════╗");
-	sb.AppendLine($"  8 ║  {B(0, 7)} {B(1, 7)} {B(2, 7)} {B(3, 7)} {B(4, 7)} {B(5, 7)} {B(6, 7)} {B(7, 7)}  ║ {WhiteSoldier} = Soldier");
-    sb.AppendLine($"  7 ║  {B(0, 6)} {B(1, 6)} {B(2, 6)} {B(3, 6)} {B(4, 6)} {B(5, 6)} {B(6, 6)} {B(7, 6)}  ║ {WhiteCannon} = Cannon");
-    sb.AppendLine($"  6 ║  {B(0, 5)} {B(1, 5)} {B(2, 5)} {B(3, 5)} {B(4, 5)} {B(5, 5)} {B(6, 5)} {B(7, 5)}  ║ {WhiteHorse} = Horse");
-    sb.AppendLine($"  5 ║  {B(0, 4)} {B(1, 4)} {B(2, 4)} {B(3, 4)} {B(4, 4)} {B(5, 4)} {B(6, 4)} {B(7, 4)}  ║ {WhiteDragon} = Dragon");
-    sb.AppendLine($"  4 ║  {B(0, 3)} {B(1, 3)} {B(2, 3)} {B(3, 3)} {B(4, 3)} {B(5, 3)} {B(6, 3)} {B(7, 3)}  ║ {WhiteKing} = King");
-    sb.AppendLine($"  3 ║  {B(0, 2)} {B(1, 2)} {B(2, 2)} {B(3, 2)} {B(4, 2)} {B(5, 2)} {B(6, 2)} {B(7, 2)}  ║ Taken:");
-    sb.AppendLine($"  2 ║  {B(0, 1)} {B(1, 1)} {B(2, 1)} {B(3, 1)} {B(4, 1)} {B(5, 1)} {B(6, 1)} {B(7, 1)}  ║ {game.TakenCount(White),2} x {WhitePiece}");
-    sb.AppendLine($"  1 ║  {B(0, 0)} {B(1, 0)} {B(2, 0)} {B(3, 0)} {B(4, 0)} {B(5, 0)} {B(6, 0)} {B(7, 0)}  ║ {game.TakenCount(Black),2} x {BlackPiece}");
-    sb.AppendLine($"    ╚═══════════════════╝");
-    sb.AppendLine($"       A B C D E F G H");
+	sb.AppendLine($"  8 ║  {B(0, 7)} {B(1, 7)} {B(2, 7)} {B(3, 7)} {B(4, 7)} {B(5, 7)} {B(6, 7)} {B(7, 7)}  ║ {WhiteSoldier} = Soldier x {whitePieces[PieceType.Soldier]}");
+    sb.AppendLine($"  7 ║  {B(0, 6)} {B(1, 6)} {B(2, 6)} {B(3, 6)} {B(4, 6)} {B(5, 6)} {B(6, 6)} {B(7, 6)}  ║ {WhiteCannon} = Cannon x {whitePieces[PieceType.Cannon]}");
+    sb.AppendLine($"  6 ║  {B(0, 5)} {B(1, 5)} {B(2, 5)} {B(3, 5)} {B(4, 5)} {B(5, 5)} {B(6, 5)} {B(7, 5)}  ║ {WhiteHorse} = Horse x {whitePieces[PieceType.Horse]}");
+    sb.AppendLine($"  5 ║  {B(0, 4)} {B(1, 4)} {B(2, 4)} {B(3, 4)} {B(4, 4)} {B(5, 4)} {B(6, 4)} {B(7, 4)}  ║ {WhiteDragon} = Dragon x {whitePieces[PieceType.Dragon]}");
+    sb.AppendLine($"  4 ║  {B(0, 3)} {B(1, 3)} {B(2, 3)} {B(3, 3)} {B(4, 3)} {B(5, 3)} {B(6, 3)} {B(7, 3)}  ║ {WhiteKing} = King x {whitePieces[PieceType.King]}");
+    sb.AppendLine($"  3 ║  {B(0, 2)} {B(1, 2)} {B(2, 2)} {B(3, 2)} {B(4, 2)} {B(5, 2)} {B(6, 2)} {B(7, 2)}  ║ {BlackSoldier} = Soldier x {blackPieces[PieceType.Soldier]}");
+    sb.AppendLine($"  2 ║  {B(0, 1)} {B(1, 1)} {B(2, 1)} {B(3, 1)} {B(4, 1)} {B(5, 1)} {B(6, 1)} {B(7, 1)}  ║ {BlackCannon} = Soldier x {blackPieces[PieceType.Cannon]}");
+    sb.AppendLine($"  1 ║  {B(0, 0)} {B(1, 0)} {B(2, 0)} {B(3, 0)} {B(4, 0)} {B(5, 0)} {B(6, 0)} {B(7, 0)}  ║ {BlackHorse} = Horse x {blackPieces[PieceType.Horse]}");
+    sb.AppendLine($"    ╚═══════════════════╝ {BlackDragon} = Dragon x {blackPieces[PieceType.Dragon]}");
+    sb.AppendLine($"       A B C D E F G H    {BlackKing} = King x {blackPieces[PieceType.King]}");
     sb.AppendLine();
+    // Display the current round number
+    sb.AppendLine($"  Turn: {game.TurnCount}");
+    // If the round number is less than or equal to 5, show the King protection prompt
+        if (game.TurnCount < 5)
+    {
+        sb.AppendLine("  King is protected and cannot be captured in the first 5 turns.");
+    }
+    if (game.TurnCount == 5)
+    {
+        sb.AppendLine("  King is no longer protected and can be captured.");
+        sb.AppendLine();
+    }
     if (selection is not null)
     {
         sb.Replace(" $ ", $"[{ToChar(game.Board[selection.Value.X, selection.Value.Y])}]");
