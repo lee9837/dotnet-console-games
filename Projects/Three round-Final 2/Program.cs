@@ -17,7 +17,7 @@ bool gameRunning = true; // Controls whether the game continues
 // Initialize the game
 InitializeDeck();
 Shuffle(deck);
-
+PrintGameIntro();
 // Play rounds until the game ends
 while (gameRunning)
 {
@@ -31,7 +31,58 @@ Console.WriteLine($"Player Wins: {playerWins}");
 Console.WriteLine($"Dealer Wins: {dealerWins}");
 Console.WriteLine($"Draws: {draws}");
 
+void PrintGameIntro()
+    {
+        Console.WriteLine("=== Welcome to the Crazy2 Card Game! ===");
+        Console.WriteLine("This is a strategic card game where you will compete against the dealer in a three-round showdown.");
+        Console.WriteLine("Your goal is to accumulate the highest score by winning each round based on different card comparison rules.\n");
 
+        Console.WriteLine("=== Game Rules ===");
+        Console.WriteLine("1. You and the dealer will each be dealt 6 cards.");
+        Console.WriteLine("2. You must assign your cards to three rounds before the game begins.");
+        Console.WriteLine("3. The rounds are played as follows:");
+
+        Console.WriteLine("\n--- Round 1: Single Card Comparison ---");
+        Console.WriteLine("- Each player selects 1 card from their hand to play.");
+        Console.WriteLine("- The player with the higher-ranked card wins 1 point.");
+        Console.WriteLine("- Card ranking: 2 < 3 < 4 ... < K < A (A is highest in this round).");
+        
+        Console.WriteLine("\n--- Round 2: Two-Card Comparison (10.5 Points Rule) ---");
+        Console.WriteLine("- Each player selects 2 cards to play.");
+        Console.WriteLine("- Card values: A=1, J/Q/K=0.5, Number cards (2-10) keep their face value.");
+        Console.WriteLine("- The goal is to reach as close as possible to 10.5 without exceeding it.");
+        Console.WriteLine("- Closest player to 10.5 wins 2 points. If both bust or tie, no points awarded.");
+        
+        Console.WriteLine("\n--- Round 3: Three-Card Comparison (Bluffing Rules) ---");
+        Console.WriteLine("- Players select 3 cards to form a hand.");
+        Console.WriteLine("- Hands are ranked from highest to lowest:");
+        Console.WriteLine("  - Straight Flush (Three consecutive cards of the same suit).");
+        Console.WriteLine("  - Three of a Kind (Three of the same rank).");
+        Console.WriteLine("  - Straight (Three consecutive cards of any suit).");
+        Console.WriteLine("  - Pair (Two cards of the same rank).");
+        Console.WriteLine("  - High Card (No special combination).");
+        Console.WriteLine("- The player with the highest-ranked hand wins 3 points.");
+
+        Console.WriteLine("\n=== Special Rules ===");
+        Console.WriteLine("--- Crazy Twos ---");
+        Console.WriteLine("- If you have a '2' card, you may activate its special effect before the game begins:");
+        Console.WriteLine("  - 2♥: Double your victory points for all rounds.");
+        Console.WriteLine("  - 2♣: Redraw a new hand of 6 cards.");
+        Console.WriteLine("  - 2♠: Swap your entire hand with the dealer.");
+        Console.WriteLine("  - 2♦: Force the dealer to randomly rearrange their assigned cards.");
+
+        Console.WriteLine("\n--- Joker Rules ---");
+        Console.WriteLine("- Jokers act as wild cards and can substitute for any rank and suit.");
+        Console.WriteLine("- Only one Joker may be used per round.");
+
+        Console.WriteLine("\n=== Game Objective ===");
+        Console.WriteLine("After playing three rounds, the total points are calculated.");
+        Console.WriteLine("The game consists of nine total rounds, and the player with the highest cumulative score wins.");
+        
+        Console.WriteLine("\nPress any key to continue...");
+        Console.ReadKey(); // Waits for user input
+        Console.Clear();   // Clears the console screen
+    }
 // Initialize the deck with 52 cards + 2 Jokers
 void InitializeDeck()
 {
@@ -222,13 +273,13 @@ List<List<Card>> AssignCardsToRounds(List<Card> hand, string playerName)
     // Round 2: 2 cards
     Console.WriteLine("Round 2: Select 2 cards (enter indices 1-6, separated by spaces):");
     var indices2 = GetValidCardIndices(selectedIndices, 2);
-    selectedIndices.UnionWith(indices2);
+    selectedIndices.UnionWith(indices2);//Make sure the selected card is one that has not been selected in the hand
     rounds.Add(new List<Card> { hand[indices2[0] - 1], hand[indices2[1] - 1] });
 
     // Round 3: 3 cards
     Console.WriteLine("Round 3: Select 3 cards (enter indices 1-6, separated by spaces):");
     var indices3 = GetValidCardIndices(selectedIndices, 3);
-    selectedIndices.UnionWith(indices3);
+    selectedIndices.UnionWith(indices3);//Make sure the selected card is one that has not been selected in the hand
     rounds.Add(new List<Card> { hand[indices3[0] - 1], hand[indices3[1] - 1], hand[indices3[2] - 1] });
 
     return rounds;
